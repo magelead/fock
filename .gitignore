@@ -1,0 +1,7 @@
+venv/
+data/
+*.pth
+__pycache__/
+saved_models/
+*.png
+.DS_Store
