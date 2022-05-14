@@ -4,7 +4,7 @@ import numbers
 import numpy as np
 import torch
 
-import ops
+from . import ops
 
 
 
@@ -22,16 +22,25 @@ class Circuit:
         self._batch_size = batch_size
         self.reset(pure, num_modes=num_modes, cutoff_dim=cutoff_dim, hbar=hbar)
 
-    # todo stress test
+
     def displacement(self, r, phi, mode):
         """
         Apply the displacement operator to the specified mode.
         Parameters:
-            r (Tensor) -  displacement magnitude, shape (batch_size, )
-            phi (Tensor) - displacement angle, shape (batch_size, )
+            r (Tensor) -  displacement magnitude, shape (batch_size, ) or scalar
+            phi (Tensor) - displacement angle, shape (batch_size, ) or scalar
             mode (int) - the mode to apply the displacement operator
+
+        Note:
+            scalar parameter meaning different circuits share the same parameter across a batch
         """
+
+
         alpha = r * torch.exp(1j * phi)
+        # broadcast to a vector for scalar
+        if alpha.ndim == 0:
+            alpha = torch.stack([alpha] * self._batch_size)
+
         new_state = ops.displacement(alpha, mode, self._state, self._cutoff_dim, self._pure)
         self._update_state(new_state)
 
@@ -122,13 +131,7 @@ class Circuit:
 
 
 
-if __name__ == '__main__':
 
-    cir = Circuit(num_modes=2, cutoff_dim=3, hbar=2., pure=False, batch_size=3)
-
-    cir.displacement(r=torch.tensor([1., 2., 3.], requires_grad=True), phi=torch.tensor([0., 0., 0.], requires_grad=True), mode=0)
-
-    cir._state
 
 
 

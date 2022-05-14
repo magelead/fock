@@ -1,0 +1,12 @@
+LICENSE
+README.md
+pyproject.toml
+setup.cfg
+src/fock/__init__.py
+src/fock/circuit.py
+src/fock/ops.py
+src/fock.egg-info/PKG-INFO
+src/fock.egg-info/SOURCES.txt
+src/fock.egg-info/dependency_links.txt
+src/fock.egg-info/requires.txt
+src/fock.egg-info/top_level.txt
