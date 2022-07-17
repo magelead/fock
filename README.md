@@ -64,18 +64,9 @@ git push
 in the same directory as `pyproject.toml`
 
 ```
-python -m pip install --upgrade build
-```
-
-```
+pip install -U build
+pip install -U twine
 python -m build
-```
-
-```
-python -m pip install --upgrade twine
-```
-
-```
 python -m twine upload dist/*
 ```
 
