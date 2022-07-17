@@ -8,39 +8,23 @@ The name of the package comes from the fact that the Fock basis representation i
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # How to develop/test
 
 
 
-## Create an env named fock with following packages
+## Create an env with pytorch and tensorflow
 
-```
-numpy==1.22.3
-tensorflow-macos==2.8.0
-torch==1.11.0
-```
+
+
 
 
 ## Install `fock` from repo in editible mode
-in the same directory as `setup.cfg`
+
 ```
 git clone https://github.com/magelead/fock
 cd fock
-pip install -e .
+# upgrade pip & run following cmd in the same directory as `pyproject.toml`
+pip install -e . 
 ```
 
 ## Migrate strawberryfields==0.10.0 to tf2.x
@@ -53,8 +37,8 @@ Download `strawberryfields==0.10.0` to `tests/strawberryfields` and modify code 
 
 
 ```
- cd tests/
- python3 test_ops.py
+cd tests/
+python test_ops.py
 ```
 
 
@@ -63,7 +47,7 @@ Download `strawberryfields==0.10.0` to `tests/strawberryfields` and modify code 
 
 # Push to Github
 
-in the same directory as `setup.cfg`
+in the same directory as `pyproject.toml`
 
 ```
 git add .
@@ -77,22 +61,22 @@ git push
 
 # Publish to PyPI
 
-in the same directory as `setup.cfg`
+in the same directory as `pyproject.toml`
 
 ```
-python3 -m pip install --upgrade build
-```
-
-```
-python3 -m build
+python -m pip install --upgrade build
 ```
 
 ```
-python3 -m pip install --upgrade twine
+python -m build
 ```
 
 ```
-python3 -m twine upload dist/*
+python -m pip install --upgrade twine
+```
+
+```
+python -m twine upload dist/*
 ```
 
 
