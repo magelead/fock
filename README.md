@@ -43,7 +43,9 @@ cd fock
 pip install -e .
 ```
 
-## Download `strawberryfields==0.10.0` to `tests/strawberryfields` and Migrate strawberryfields==0.10.0 to tf2.x
+## Migrate strawberryfields==0.10.0 to tf2.x
+
+Download `strawberryfields==0.10.0` to `tests/strawberryfields` and modify code if necessary
 
 ## Develop new function
 
