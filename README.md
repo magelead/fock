@@ -12,13 +12,13 @@ The name of the package comes from the fact that the Fock basis representation i
 
 
 
-## Create an env with pytorch and tensorflow
+### Create an env with pytorch and tensorflow
 
 
 
 
 
-## Install `fock` from repo in editible mode
+### Install `fock` from repo in editible mode
 
 ```
 git clone https://github.com/magelead/fock
@@ -27,13 +27,13 @@ cd fock
 pip install -e . 
 ```
 
-## Migrate strawberryfields==0.10.0 to tf2.x
+### Migrate strawberryfields==0.10.0 to tf2.x
 
 Download `strawberryfields==0.10.0` to `tests/strawberryfields` and modify code if necessary
 
-## Develop new function
+### Develop new function
 
-## Write test code then run 
+### Write test code then run 
 
 
 ```
@@ -89,7 +89,6 @@ Built with Sphinx using a theme provided by Read the Docs.
 # Todo
 
 
-* test_circuit.py should use MAE, now there is no absolute fucntion
 * BS
 * PS
 * S
