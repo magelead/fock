@@ -102,59 +102,67 @@ def single_mode_gate(matrix, mode, in_modes, pure=True):
     return output
 
 
-#---------------------------------------------------------------------------------------------------------------------------------------
+
+def displacement_matrix(alpha, D):
+    """creates the single mode displacement matrix"""
+    batch_size = alpha.shape[0]
+
+    idxs = [(j, k) for j in range(D) for k in range(j)] # [(1, 0), (2, 0), (2, 1)] for D=3
+    idxs = batchify_indices(idxs, batch_size)
+    idxs = torch.tensor(idxs).T
 
 
-def displacement_matrix(r, phi, cutoff, dtype):  # pragma: no cover
-    r"""Calculates the matrix elements of the displacement gate using a recurrence relation.
-    Args:
-        r (tensor): batched displacement magnitude shape = (batch_size,)
-        phi (tensor): batched displacement angle shape = (batch_size,)
-        cutoff (int): Fock ladder cutoff
-        dtype (data type): Specifies the data type used for the calculation
-    Returns:
-        tensor[complex]: matrix representing the displacement operation.
-    """
-
-    r = r.to(dtype)
-    phi = phi.to(dtype)
-    batch_size = r.shape[0]
+    signs = [(-1.) ** (j-k) 
+             for j in range(D) for k in range(j)]
+    signs = signs * batch_size  
+    signs = torch.tensor(signs)
+    # tensor([-1, 1, -1,    -1, 1, -1])
 
 
-    D = torch.zeros((batch_size, cutoff, cutoff)).to(dtype)
-    sqrt = torch.sqrt(torch.arange(cutoff)).to(dtype)
+
+    values = [alpha ** (j-k) * np.sqrt(binom(j, k) / factorial(j-k)) 
+              for j in range(D) for k in range(j)]
+    values = torch.stack(values, dim=-1)  
+    values = values.reshape(-1)
+    # tensor([1.0000+0.j, 0.7071+0.j, 1.4142+0.j,     2.0000+0.j, 2.8284+0.j, 2.8284+0.j])
+
+
+
+    dense_shape = [batch_size, D, D]
+        
+    eye_diag = torch.stack([torch.eye(D)]*batch_size) # (batch_size, D, D)
     
-    alpha0 = r * torch.exp(1j * phi)
-    alpha1 = -r * torch.exp(-1j * phi)
+    sign_lower_diag = torch.zeros(dense_shape).index_put_([dim for dim in idxs], signs)
+    sign_matrix = sign_lower_diag + eye_diag
 
-
-    D[:, 0, 0] = torch.exp(-0.5 * r**2)
-    
-    for m in range(1, cutoff):
-
-        D[:, m, 0] = alpha0 / sqrt[m] * D[:, m - 1, 0].clone()
-
+    lower_diag = torch.zeros(dense_shape, dtype=torch.complex64).index_put_([dim for dim in idxs], values)
+    E = lower_diag + eye_diag
     
 
-    for n in range(1, cutoff):
-    	D[:, 0, n] = alpha1 / sqrt[n] * D[:, 0, n - 1].clone()
-
-
-    for m in range(1, cutoff):
-        for n in range(1, cutoff):
-            D[:, m, n] = alpha1 / sqrt[n] * D[:, m, n - 1].clone() + sqrt[m] / sqrt[n] * D[:, m - 1, n - 1].clone()
+    E_prime = torch.conj(E) * sign_matrix
     
-    return D
+
+    eqn = 'aik,ajk->aij' 
+  
+    prefactor = torch.unsqueeze(torch.unsqueeze(torch.exp(-0.5 * torch.abs(alpha) ** 2).to(torch.complex64), -1), -1)
+    
+    D_alpha = prefactor * torch.einsum(eqn, E, E_prime)
+    
+    return D_alpha
+
+
+def batchify_indices(idxs, batch_size):
+    """adds batch indices to the index numbering"""
+    return [(bdx,) + idxs[i] for bdx in range(batch_size) for i in range(len(idxs))]
 
 
 
-def displacement(r, phi, mode, in_modes, D, pure=True, dtype=torch.complex64):
-    """returns displacement unitary matrix applied on specified input modes"""
-    matrix = displacement_matrix(r, phi, D, dtype)
+def displacement(alpha, mode, in_modes, D, pure=True):
+    """returns displacement unitary matrix on specified input modes"""
+    matrix = displacement_matrix(alpha, D)
     output = single_mode_gate(matrix, mode, in_modes, pure)
 
     return output
-
 
 
 
@@ -163,12 +171,7 @@ if __name__ == '__main__':
     
     r = torch.tensor([2. , 2.], requires_grad=True)
     phi = torch.tensor([-3. , -3.], requires_grad=True)
-    
-    matrix = displacement_matrix(r, phi, 2, torch.complex64)
+    alpha = r * torch.exp(1j * phi)
+
+    matrix = displacement_matrix(alpha, 2)
     print('debug', matrix)
-    
-    matrix.sum().backward()
-    print('debug', r.grad)
-    print('debug', phi.grad)
-
-

@@ -12,7 +12,7 @@ The name of the package comes from the fact that the Fock basis representation i
 
 
 
-### Create an env with pytorch and tensorflow
+### Create an env with pytorch and tensorflow called ML
 
 
 
@@ -27,9 +27,9 @@ cd fock
 pip install -e . 
 ```
 
-### Migrate strawberryfields==0.10.0 to tf2.x
 
-Download `strawberryfields==0.10.0` to `tests/strawberryfields` and modify code if necessary
+### Install strawberryfields==0.20.0 for test
+
 
 ### Develop new function
 
@@ -80,9 +80,12 @@ Built with Sphinx using a theme provided by Read the Docs.
 # Todo
 
 
+
+* D
+
+* S
 * BS
 * PS
-* S
 * Kerr
 
 

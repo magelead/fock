@@ -12,69 +12,47 @@ class Circuit:
     r"""Base class for representing and operating on a collection of
     CV quantum optics modes in the Fock basis.
     The modes are initialized in the (multimode) vacuum state,
-    using the Fock representation with given cutoff_dim.
+    using the Fock representation with given cutoff.
     The state of the modes is manipulated by calling the various methods.
     
     `self._batched=True` all the time
     `self._state_is_pure` -> `self._pure`
     """
-    def __init__(self, num_modes, cutoff_dim, hbar=2., pure=True, batch_size=None):
+    def __init__(self, num_modes, cutoff, hbar=2., pure=True, batch_size=None, dtype=torch.complex64):
         self._batch_size = batch_size
-        self.reset(pure, num_modes=num_modes, cutoff_dim=cutoff_dim, hbar=hbar)
+        self.reset(pure, num_modes=num_modes, cutoff=cutoff, hbar=hbar, dtype=dtype)
+        print('Init a CV circuit...')
 
 
     def displacement(self, r, phi, mode):
         """
         Apply the displacement operator to the specified mode.
         Parameters:
-            r (Tensor) -  displacement magnitude, shape (batch_size, ) or scalar
+            r (Tensor) -  displacement magnitude >0, shape (batch_size, ) or scalar
             phi (Tensor) - displacement angle, shape (batch_size, ) or scalar
             mode (int) - the mode to apply the displacement operator
 
-        Note:
+        Notes:
             scalar parameter meaning different circuits share the same parameter across a batch
+            scalar will be broadcast to vector of batch_size
+            r phi should be float32 for complex64, float64 for complex128
         """
 
+        # broadcast the scalar to a vector 
+        if r.ndim == 0:
+            r = torch.stack([r] * self._batch_size)
+        if phi.ndim == 0:
+            phi = torch.stack([phi] * self._batch_size)
 
-        alpha = r * torch.exp(1j * phi)
-        # broadcast to a vector for scalar
-        if alpha.ndim == 0:
-            alpha = torch.stack([alpha] * self._batch_size)
-
-        new_state = ops.displacement(alpha, mode, self._state, self._cutoff_dim, self._pure)
+        new_state = ops.displacement(r, phi, mode, self._state, self._cutoff, self._pure, self._dtype)
         self._update_state(new_state)
 
 
-    def _valid_modes(self, modes):
-        """modes (list[int] or non-negative int): The mode(s) of the CV circuit."""
-        if isinstance(modes, int):
-            modes = [modes]
-
-        for mode in modes:
-            if mode < 0:
-                raise ValueError("Specified mode number(s) cannot be negative.")
-            elif mode >= self._num_modes:
-                raise ValueError("Specified mode number(s) are not compatible with number of modes.")
-
-        if len(modes) != len(set(modes)):
-            raise ValueError("The specified modes cannot appear multiple times.")
-
-        return True
-    
-    def _check_incompatible_batches(self, *params):
-        """Helper function for verifying that all the params have the same batch size."""   
-        for idx, p in enumerate(params):
-            param_batch_size = p.shape[0]
-            if idx == 0:
-                ref_batch_size = param_batch_size
-            else:
-                if param_batch_size != ref_batch_size:
-                    raise ValueError("Parameters have incompatible batch sizes.")
 
 
-    def _make_vac_states(self, cutoff_dim):
+    def _make_vac_states(self, cutoff):
         """Make vacuum state tensors"""
-        v = torch.zeros(cutoff_dim, dtype=torch.complex64)
+        v = torch.zeros(cutoff, dtype=self._dtype)
         v[0] = 1.+0.j
         self._single_mode_pure_vac = v
         self._single_mode_mixed_vac = torch.einsum('i,j->ij', v, v)
@@ -86,7 +64,7 @@ class Circuit:
         self._state_history.append(new_state)
         self._state = new_state
     
-    def reset(self, pure=True, num_modes=None, cutoff_dim=None, hbar=None):
+    def reset(self, pure=True, num_modes=None, cutoff=None, hbar=None, dtype=torch.complex64):
         r"""
         Resets the state of the circuit to have all modes in vacuum.
         For all the parameters, None means unchanged.
@@ -94,7 +72,7 @@ class Circuit:
         Args:
             pure (bool): if True, the reset circuit will represent its state as a pure state. If False, the representation will be mixed.
             num_modes (int): sets the number of modes in the reset circuit.
-            cutoff_dim (int): new Fock space cutoff dimension to use.
+            cutoff (int): new Fock space cutoff dimension to use.
             hbar (float): new :math:`\hbar` value.
         """
         if pure is not None:
@@ -107,19 +85,23 @@ class Circuit:
                 raise ValueError("Argument 'num_subsystems' must be a positive integer")
             self._num_modes = num_modes
 
-        if cutoff_dim is not None:
-            if not isinstance(cutoff_dim, int) or cutoff_dim < 1:
-                raise ValueError("Argument 'cutoff_dim' must be a positive integer")
-            self._cutoff_dim = cutoff_dim
+        if cutoff is not None:
+            if not isinstance(cutoff, int) or cutoff < 1:
+                raise ValueError("Argument 'cutoff' must be a positive integer")
+            self._cutoff = cutoff
 
         if hbar is not None:
             if not isinstance(hbar, numbers.Real) or hbar <= 0:
                 raise ValueError("Argument 'hbar' must be a positive number")
             self._hbar = hbar
 
+        if dtype not in (torch.complex64, torch.complex128):
+            raise ValueError("Argument 'dtype' must be a complex PyTorch data type")
+        self._dtype = dtype
+
         self._state_history = []
         
-        self._make_vac_states(self._cutoff_dim)
+        self._make_vac_states(self._cutoff)
         single_mode_vac = self._single_mode_pure_vac if pure else self._single_mode_mixed_vac
         
         if self._num_modes == 1:
