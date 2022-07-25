@@ -80,13 +80,12 @@ Built with Sphinx using a theme provided by Read the Docs.
 # Todo
 
 
-
-* D
-
+* test_phase_shifter_matrix
+* test_circuit_grad_phase_shifter
+* test Kerr interaction
 * S
 * BS
-* PS
-* Kerr
+
 
 
 # References

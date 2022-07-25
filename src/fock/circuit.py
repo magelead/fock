@@ -28,7 +28,7 @@ class Circuit:
         """
         Apply the displacement operator to the specified mode.
         Parameters:
-            r (Tensor) -  displacement magnitude >0, shape (batch_size, ) or scalar
+            r (Tensor) -  displacement magnitude >0, shape=(batch_size, ) or scalar
             phi (Tensor) - displacement angle, shape (batch_size, ) or scalar
             mode (int) - the mode to apply the displacement operator
 
@@ -47,6 +47,32 @@ class Circuit:
         new_state = ops.displacement(r, phi, mode, self._state, self._cutoff, self._pure, self._dtype)
         self._update_state(new_state)
 
+
+    def phase_shifter(self, phi, mode):
+        """
+        Apply the phase shifter (rotation) operator to the specified mode.
+        Parameters:
+            phi (Tensor) - phase shift angle, shape=(batch_size, ) or scalar
+            mode (int) - the mode to apply the displacement operator
+        """
+
+        if phi.ndim == 0:
+            phi = torch.stack([phi] * self._batch_size)
+
+        new_state = ops.phase_shifter(phi, mode, self._state, self._cutoff, self._pure, self._dtype)
+        self._update_state(new_state)
+
+
+    def kerr_interaction(self, kappa, mode):
+        """
+        Apply the Kerr interaction operator to the specified mode.
+        """
+
+        if kappa.ndim == 0:
+            kappa = torch.stack([kappa] * self._batch_size)
+
+        new_state = ops.kerr_interaction(kappa, mode, self._state, self._cutoff, self._pure, self._dtype)
+        self._update_state(new_state)
 
 
 

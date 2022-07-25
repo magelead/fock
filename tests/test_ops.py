@@ -70,6 +70,30 @@ def test_grad_displacement_matrix(cutoff, dtype):
  
 
 
+def test_phase_shifter_matrix(cutoff, dtype):
+   
+    if dtype == 'complex64':
+        torch_dtype = torch.complex64
+        tf_dtype = tf.complex64
+    
+    if dtype == 'complex128':
+        torch_dtype = torch.complex128
+        tf_dtype = tf.complex128
+ 
+     
+    phi = 10 * torch.randn(2) # batch_size = 2
+    matrix = fock.ops.phase_shifter_matrix(phi, cutoff, dtype=torch_dtype).numpy()
+
+    phi_sf = phi.numpy()
+    matrix_sf = sf.ops.phase_shifter_matrix(phi_sf, cutoff, batched=True, dtype=tf_dtype).numpy()
+
+    error = np.mean(np.abs((matrix-matrix_sf)))
+
+
+ 
+    return error, phi
+
+
 
 
 
@@ -78,17 +102,24 @@ if __name__ == '__main__':
 
 
     # test `displacement_matrix`
-    for i in range(1000):
+    for i in range(100):
         error, r, phi = test_displacement_matrix(cutoff=10, dtype='complex128')
         if error > 1e-5:
             raise ValueError(f' `test_displacement_matrix` failed! error={error} r={r} phi={phi}')
        
 
     # test `grad_displacement_matrix`
-    for i in range(1000):
+    for i in range(100):
         error, r, phi = test_grad_displacement_matrix(cutoff=10, dtype='complex128')
         if error > 1e-5:
             raise ValueError(f' `test_grad_displacement_matrix` failed! error={error} r={r} phi={phi}')
+
+
+    # test `phase_shifter_matrix`
+    for i in range(100):
+        error, r = test_phase_shifter_matrix(cutoff=10, dtype='complex128')
+        if error > 1e-5:
+            raise ValueError(f' `test_phase_shifter_matrix` failed! error={error} phi={phi}')
 
 
     print('\nPassed!\n')

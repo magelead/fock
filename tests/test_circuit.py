@@ -78,6 +78,35 @@ def test_circuit_grad_displacemnet(pure):
 
 
 
+def test_circuit_phase_shifter(pure=True, scalar=True, mode=0):
+    
+
+    if scalar:
+
+        phi=torch.randn(())
+
+        phi_sf = phi.numpy()
+      
+    else:
+
+        # (batch_size, )
+        phi=torch.randn(3)
+        
+        phi_sf = phi.numpy()
+
+
+    cir_sf = sf.circuit.Circuit(num_modes=2, cutoff_dim=3, pure=pure, batch_size=3, dtype=tf.complex128)
+    cir_sf.phase_shift(phi_sf, mode)
+
+
+    cir_fock = fock.Circuit(num_modes=2, cutoff=3, hbar=2., pure=pure, batch_size=3, dtype=torch.complex128)
+    cir_fock.phase_shifter(phi, mode)
+
+    error = np.mean(np.abs(cir_sf._state.numpy() - cir_fock._state.numpy()))
+
+   
+    return error
+
 
 if __name__ == '__main__':
 
@@ -89,6 +118,11 @@ if __name__ == '__main__':
         error = test_circuit_reset()
         if error > 1e-6:
             raise ValueError(f'test `Circuit.reset` failed! error={error}')
+
+
+
+
+
 
 
     # test `Circuit.displacement`
@@ -131,6 +165,46 @@ if __name__ == '__main__':
         error = test_circuit_grad_displacemnet(pure=False)
         if error > 1e-6:
             raise ValueError(f'test `grad of Circuit.displacement` failed! error={error}')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # test `Circuit.phase_shifter`   
+    for i in range(10):
+        error = test_circuit_phase_shifter(pure=True, scalar=True)
+        if error > 1e-6:
+            raise ValueError(f'test `Circuit.phase_shifter` failed! error={error}')
+
+
+    # test `Circuit.phase_shifter`
+    for i in range(10):
+        error = test_circuit_phase_shifter(pure=True, scalar=False)
+        if error > 1e-6:
+            raise ValueError(f'test `Circuit.phase_shifter` failed! error={error}')
+
+
+    # test `Circuit.phase_shifter`
+    for i in range(10):
+        error = test_circuit_phase_shifter(pure=False, scalar=True)
+        if error > 1e-6:
+            raise ValueError(f'test `Circuit.phase_shifter` failed! error={error}')
+
+    
+    # test `Circuit.phase_shifter`
+    for i in range(10):
+        error = test_circuit_phase_shifter(pure=False, scalar=False)
+        if error > 1e-6:
+            raise ValueError(f'test `Circuit.phase_shifter` failed! error={error}')
 
 
 

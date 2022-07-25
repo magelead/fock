@@ -1,3 +1,6 @@
+# https://arxiv.org/pdf/2004.11002.pdf
+
+
 
 from string import ascii_lowercase as indices
 max_num_indices = len(indices)
@@ -148,9 +151,41 @@ def displacement_matrix(r, phi, cutoff, dtype):  # pragma: no cover
 
 
 
-def displacement(r, phi, mode, in_modes, D, pure=True, dtype=torch.complex64):
+
+
+
+
+def phase_shifter_matrix(phi, cutoff, dtype):
+    """creates the single mode phase shifter matrix
+    Args:
+        phi (tensor): batched angle shape = (batch_size,)
+    """
+    phi = phi.to(dtype)
+   
+    diag = [torch.exp(1j * phi * n) for n in range(cutoff)]
+    diag = torch.stack(diag, dim=1)
+    diag_matrix = torch.diag_embed(diag)
+    return diag_matrix
+
+
+def kerr_interaction_matrix(kappa, cutoff, dtype):
+    """creates the single mode Kerr interaction matrix
+    Args:
+        kappa (tensor): batched angle shape = (batch_size,)
+    """
+    kappa = kappa.to(dtype)
+
+    diag = [torch.exp(1j * kappa * n ** 2) for n in range(cutoff)]
+    diag = torch.stack(diag, dim=1)
+    diag_matrix = torch.diag_embed(diag)
+    return diag_matrix
+
+
+#---------------------------------------------------------------------------------------------------------------------------------------
+
+def displacement(r, phi, mode, in_modes, cutoff, pure=True, dtype=torch.complex64):
     """returns displacement unitary matrix applied on specified input modes"""
-    matrix = displacement_matrix(r, phi, D, dtype)
+    matrix = displacement_matrix(r, phi, cutoff, dtype)
     output = single_mode_gate(matrix, mode, in_modes, pure)
 
     return output
@@ -158,17 +193,23 @@ def displacement(r, phi, mode, in_modes, D, pure=True, dtype=torch.complex64):
 
 
 
-if __name__ == '__main__':
-    #torch.autograd.set_detect_anomaly(True)
-    
-    r = torch.tensor([2. , 2.], requires_grad=True)
-    phi = torch.tensor([-3. , -3.], requires_grad=True)
-    
-    matrix = displacement_matrix(r, phi, 2, torch.complex64)
-    print('debug', matrix)
-    
-    matrix.sum().backward()
-    print('debug', r.grad)
-    print('debug', phi.grad)
+def phase_shifter(phi, mode, in_modes, cutoff, pure=True, dtype=torch.complex64):
+    """returns phase shift unitary matrix on specified input modes"""
+    matrix = phase_shifter_matrix(phi, cutoff, dtype=dtype)
+    output = single_mode_gate(matrix, mode, in_modes, pure)
+    return output
+
+
+def kerr_interaction(kappa, mode, in_modes, cutoff, pure=True, dtype=torch.complex64):
+    """returns Kerr unitary matrix on specified input modes"""
+    matrix = kerr_interaction_matrix(kappa, cutoff, dtype=dtype)
+    output = single_mode_gate(matrix, mode, in_modes, pure)
+    return output
+
+
+
+
+
+
 
 
